@@ -1,0 +1,251 @@
+<div class="dashboard-content" style="margin-top: -40px;">
+  <!-- Case Pipelines Container -->
+  <div class="case-pipelines-container">
+    <!-- Header -->
+    <div class="header">
+      <h1 class="title">Welcome, Talal!</h1>
+      
+      <!-- Main Tabs - UPDATED: Analytics, Cases (default), Breached, Todos -->
+      <div class="main-tabs">
+        <button 
+          *ngFor="let tab of tabs"
+          class="tab-button"
+          [class.active]="activeTab === tab"
+          (click)="onTabChange(tab)">
+          {{ tab }}
+        </button>
+      </div>
+  
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="icon-button" aria-label="Share">
+          <mat-icon>ios_share</mat-icon>
+        </button>
+        <button class="icon-button" aria-label="Calendar">
+          <mat-icon>calendar_today</mat-icon>
+        </button>
+        <button class="icon-button" aria-label="Fullscreen">
+          <mat-icon>open_in_full</mat-icon>
+        </button>
+      </div>
+    </div>
+  
+    <!-- Analytics Tab -->
+    <div *ngIf="activeTab === 'Analytics'" class="analytics-dashboard">
+      <div class="analytics-grid">
+        <!-- Case Progress Donut Chart -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Case Status Distribution</mat-card-title>
+            <mat-card-subtitle>Current case breakdown by status</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container-donut">
+              <canvas #caseProgressChart></canvas>
+            </div>
+            <div class="chart-stats">
+              <div class="stat-item">
+                <span class="stat-dot" style="background: #3b82f6;"></span>
+                <span class="stat-label">Assigned: <strong>{{ caseStats.assigned }}</strong></span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-dot" style="background: #f59e0b;"></span>
+                <span class="stat-label">Working: <strong>{{ caseStats.working }}</strong></span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-dot" style="background: #10b981;"></span>
+                <span class="stat-label">Completed: <strong>{{ caseStats.completed }}</strong></span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-dot" style="background: #dc2626;"></span>
+                <span class="stat-label">Breached: <strong>{{ caseStats.breached }}</strong></span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- TODO Progress Donut Chart -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>TODO Status Distribution</mat-card-title>
+            <mat-card-subtitle>Current TODO breakdown by status</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container-donut">
+              <canvas #todoProgressChart></canvas>
+            </div>
+            <div class="chart-stats">
+              <div class="stat-item">
+                <span class="stat-dot" style="background: #f59e0b;"></span>
+                <span class="stat-label">Open: <strong>{{ todoStats.open }}</strong></span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-dot" style="background: #3b82f6;"></span>
+                <span class="stat-label">In Progress: <strong>{{ todoStats.inProgress }}</strong></span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-dot" style="background: #10b981;"></span>
+                <span class="stat-label">Completed: <strong>{{ todoStats.completed }}</strong></span>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Case Trend Chart -->
+        <mat-card class="chart-card wide">
+          <mat-card-header>
+            <mat-card-title>Case Activity Trend</mat-card-title>
+            <mat-card-subtitle>Weekly case assignment and completion trend</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container-line">
+              <canvas #caseTrendChart></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- TODO Trend Chart -->
+        <mat-card class="chart-card wide">
+          <mat-card-header>
+            <mat-card-title>TODO Activity Trend</mat-card-title>
+            <mat-card-subtitle>Weekly TODO creation and completion trend</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container-line">
+              <canvas #todoTrendChart></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Performance Chart -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Weekly Performance</mat-card-title>
+            <mat-card-subtitle>Cases and TODOs completed per week</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container-bar">
+              <canvas #performanceChart></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Workload Distribution -->
+        <mat-card class="chart-card">
+          <mat-card-header>
+            <mat-card-title>Team Workload</mat-card-title>
+            <mat-card-subtitle>Tasks assigned per team member</mat-card-subtitle>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="chart-container-bar">
+              <canvas #workloadChart></canvas>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Key Metrics Summary -->
+        <mat-card class="metrics-summary wide">
+          <mat-card-header>
+            <mat-card-title>Key Performance Indicators</mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <div class="kpi-grid">
+              <div class="kpi-item">
+                <div class="kpi-icon" style="background: #eff6ff;">
+                  <mat-icon style="color: #3b82f6;">assignment</mat-icon>
+                </div>
+                <div class="kpi-details">
+                  <span class="kpi-value">8</span>
+                  <span class="kpi-label">Total Cases</span>
+                </div>
+                <div class="kpi-trend positive">
+                  <mat-icon>trending_up</mat-icon>
+                  <span>+12%</span>
+                </div>
+              </div>
+
+              <div class="kpi-item">
+                <div class="kpi-icon" style="background: #fef3c7;">
+                  <mat-icon style="color: #f59e0b;">check_box</mat-icon>
+                </div>
+                <div class="kpi-details">
+                  <span class="kpi-value">8</span>
+                  <span class="kpi-label">Total TODOs</span>
+                </div>
+                <div class="kpi-trend positive">
+                  <mat-icon>trending_up</mat-icon>
+                  <span>+8%</span>
+                </div>
+              </div>
+
+              <div class="kpi-item">
+                <div class="kpi-icon" style="background: #dcfce7;">
+                  <mat-icon style="color: #10b981;">done_all</mat-icon>
+                </div>
+                <div class="kpi-details">
+                  <span class="kpi-value">87%</span>
+                  <span class="kpi-label">Completion Rate</span>
+                </div>
+                <div class="kpi-trend positive">
+                  <mat-icon>trending_up</mat-icon>
+                  <span>+5%</span>
+                </div>
+              </div>
+
+              <div class="kpi-item">
+                <div class="kpi-icon" style="background: #fee2e2;">
+                  <mat-icon style="color: #dc2626;">warning</mat-icon>
+                </div>
+                <div class="kpi-details">
+                  <span class="kpi-value">1</span>
+                  <span class="kpi-label">Breached Cases</span>
+                </div>
+                <div class="kpi-trend">
+                  <mat-icon>remove</mat-icon>
+                  <span>0%</span>
+                </div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+      </div>
+    </div>
+
+    <!-- Cases Tab (Default) -->
+    <div *ngIf="activeTab === 'Cases'" class="">
+      <div class="pipeline-section" style="width: 100%;">
+        <div class="cards-container">
+          <mat-card class="case-card">
+            <app-cases></app-cases>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+
+    <!-- Breached Tab -->
+    <div *ngIf="activeTab === 'Breached'" class="">
+      <div class="pipeline-section" style="width: 100%;">
+        <div class="cards-container">
+          <mat-card class="case-card">
+            <div style="padding: 40px; text-align: center;">
+              <mat-icon style="font-size: 64px; width: 64px; height: 64px; color: #dc2626;">warning</mat-icon>
+              <h2>Breached Cases</h2>
+              <p>View all breached cases here</p>
+            </div>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+
+    <!-- Todos Tab -->
+    <div *ngIf="activeTab === 'Todos'" class="">
+      <div class="pipeline-section" style="width: 100%;">
+        <div class="cards-container">
+          <mat-card class="case-card">
+            <app-todo></app-todo>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

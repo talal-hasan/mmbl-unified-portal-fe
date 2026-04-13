@@ -1,0 +1,440 @@
+<div class="todo-dashboard-container">
+  <!-- Analytics Cards -->
+  <div class="analytics-section">
+    <div class="analytics-card total-cases">
+      <div class="card-content">
+        <span class="card-value">{{ stats.totalCases }}</span>
+        <span class="card-label">Total Cases</span>
+      </div>
+      <div class="card-trend positive">
+        <mat-icon>trending_up</mat-icon>
+        <span>+12%</span>
+      </div>
+    </div>
+
+    <div class="analytics-card total-todos">
+      <div class="card-content">
+        <span class="card-value">{{ stats.totalTodos }}</span>
+        <span class="card-label">Total TODOs</span>
+      </div>
+      <div class="card-trend positive">
+        <mat-icon>trending_up</mat-icon>
+        <span>+8%</span>
+      </div>
+    </div>
+
+    <div class="analytics-card open-cases">
+      <div class="card-content">
+        <span class="card-value">{{ stats.openCases }}</span>
+        <span class="card-label">Open Todos</span>
+      </div>
+      <div class="card-trend">
+        <mat-icon>remove</mat-icon>
+        <span>0%</span>
+      </div>
+    </div>
+
+    <div class="analytics-card closed-cases">
+      <div class="card-content">
+        <span class="card-value">{{ stats.closedCases }}</span>
+        <span class="card-label">Closed Todos</span>
+      </div>
+      <div class="card-trend positive">
+        <mat-icon>trending_up</mat-icon>
+        <span>+15%</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="todo-toolbar">
+    <div class="toolbar-left">
+      <!-- Search -->
+      <div class="search-box">
+        <mat-icon>search</mat-icon>
+        <input 
+          type="text" 
+          placeholder="Search tasks..."
+          [(ngModel)]="searchQuery"
+          (input)="applySearch($event)"
+          class="search-input">
+      </div>
+
+      <!-- Filters -->
+      <button class="filter-btn" [matMenuTriggerFor]="statusMenu">
+        <mat-icon>filter_list</mat-icon>
+        <span>Status: {{ filterStatus === 'all' ? 'All' : filterStatus }}</span>
+      </button>
+      <mat-menu #statusMenu="matMenu">
+        <button mat-menu-item (click)="filterByStatus('all')">All Status</button>
+        <button mat-menu-item (click)="filterByStatus('Open')">Open</button>
+        <button mat-menu-item (click)="filterByStatus('In Progress')">In Progress</button>
+        <button mat-menu-item (click)="filterByStatus('Completed')">Completed</button>
+        <button mat-menu-item (click)="filterByStatus('Cancelled')">Cancelled</button>
+      </mat-menu>
+
+      <button class="filter-btn" [matMenuTriggerFor]="priorityMenu">
+        <mat-icon>flag</mat-icon>
+        <span>Priority: {{ filterPriority === 'all' ? 'All' : filterPriority }}</span>
+      </button>
+      <mat-menu #priorityMenu="matMenu">
+        <button mat-menu-item (click)="filterByPriority('all')">All Priorities</button>
+        <button mat-menu-item (click)="filterByPriority('Low')">Low</button>
+        <button mat-menu-item (click)="filterByPriority('Medium')">Medium</button>
+        <button mat-menu-item (click)="filterByPriority('High')">High</button>
+        <button mat-menu-item (click)="filterByPriority('Critical')">Critical</button>
+      </mat-menu>
+
+      <button class="clear-filters-btn" (click)="clearFilters()" *ngIf="searchQuery || filterStatus !== 'all' || filterPriority !== 'all'">
+        <mat-icon>clear</mat-icon>
+        Clear Filters
+      </button>
+    </div>
+
+    <div class="toolbar-right">
+      <!-- View Toggle -->
+      <div class="view-toggle">
+        <button 
+          class="view-btn"
+          [class.active]="viewMode === 'grid'"
+          (click)="setViewMode('grid')"
+          matTooltip="Grid View">
+          <mat-icon>grid_view</mat-icon>
+        </button>
+        <button 
+          class="view-btn"
+          [class.active]="viewMode === 'list'"
+          (click)="setViewMode('list')"
+          matTooltip="List View">
+          <mat-icon>view_list</mat-icon>
+        </button>
+        <button 
+          class="view-btn"
+          [class.active]="viewMode === 'kanban'"
+          (click)="setViewMode('kanban')"
+          matTooltip="Kanban View">
+          <mat-icon>view_kanban</mat-icon>
+        </button>
+      </div>
+
+      <!-- Create Button -->
+      <button class="create-btn" (click)="createTodo()">
+        <mat-icon>add</mat-icon>
+        <span>New TODO</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Grid View -->
+  <div class="todos-grid" *ngIf="viewMode === 'grid'">
+    <div 
+      *ngFor="let todo of dataSource.filteredData | slice: (paginator?.pageIndex || 0) * (paginator?.pageSize || 10) : ((paginator?.pageIndex || 0) + 1) * (paginator?.pageSize || 10)"
+      class="todo-card"
+      [class.overdue]="isOverdue(todo)">
+      
+      <!-- Card Header -->
+      <div class="card-header">
+        <div class="priority-badge" [style.background-color]="getPriorityColor(todo.priority)" [style.color]="todo.priority === 'Low' ? '#000' : '#fff'" [style.border]="todo.priority === 'Low' ? '1px solid #000' : 'none'">
+          {{ todo.priority }}
+        </div>
+        
+        <button class="menu-btn" [matMenuTriggerFor]="todoMenu">
+          <mat-icon>more_vert</mat-icon>
+        </button>
+        <mat-menu #todoMenu="matMenu">
+          <button mat-menu-item (click)="editTodo(todo)">
+            <mat-icon>edit</mat-icon>
+            <span>Edit</span>
+          </button>
+          <button mat-menu-item (click)="completeTodo(todo)" *ngIf="todo.status !== 'Completed'">
+            <mat-icon>check_circle</mat-icon>
+            <span>Complete</span>
+          </button>
+          <button mat-menu-item (click)="deleteTodo(todo)">
+            <mat-icon>delete</mat-icon>
+            <span>Delete</span>
+          </button>
+        </mat-menu>
+      </div>
+
+      <!-- Card Content -->
+      <div class="card-body">
+        <h3 class="todo-title">{{ todo.title }}</h3>
+        <p class="todo-description">{{ todo.description }}</p>
+
+        <!-- Case Info -->
+        <div class="case-info" *ngIf="todo.caseId">
+          <mat-icon>folder</mat-icon>
+          <span>{{ todo.caseId }}</span>
+        </div>
+
+        <!-- Tags -->
+        <div class="tags-container" *ngIf="todo.tags && todo.tags.length > 0">
+          <span *ngFor="let tag of todo.tags" class="tag">{{ tag }}</span>
+        </div>
+      </div>
+
+      <!-- Card Footer -->
+      <div class="card-footer">
+        <div class="status-info">
+          <div class="status-badge" [style.background-color]="getStatusColor(todo.status)">
+            {{ todo.status }}
+          </div>
+        </div>
+
+        <div class="footer-info">
+          <div class="assignee" *ngIf="todo.assignedTo">
+            <mat-icon>person</mat-icon>
+            <span>{{ todo.assignedTo }}</span>
+          </div>
+          <div class="due-date" *ngIf="todo.dueDate" [class.overdue]="isOverdue(todo)">
+            <mat-icon>calendar_today</mat-icon>
+            <span>{{ todo.dueDate | date: 'MMM d' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="dataSource.filteredData.length === 0">
+      <mat-icon>assignment</mat-icon>
+      <h3>No tasks found</h3>
+      <p>Create your first TODO to get started</p>
+      <button class="create-btn" (click)="createTodo()">
+        <mat-icon>add</mat-icon>
+        <span>Create TODO</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- List View - UPDATED FOR FIXED HEIGHT AND COMPACT DISPLAY -->
+  <div class="todos-list" *ngIf="viewMode === 'list'">
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" matSort class="todos-table">
+        
+        <!-- Title Column - UPDATED TO SHOW ELLIPSIS -->
+        <ng-container matColumnDef="title">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Title</th>
+          <td mat-cell *matCellDef="let todo" class="title-cell">
+            <span class="title-text" [matTooltip]="todo.title">{{ todo.title }}</span>
+          </td>
+        </ng-container>
+
+        <!-- Description Column -->
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef>Description</th>
+          <td mat-cell *matCellDef="let todo" class="description-cell" [matTooltip]="todo.description">
+            {{ todo.description }}
+          </td>
+        </ng-container>
+
+        <!-- Case Column - NO WRAPPING -->
+        <ng-container matColumnDef="case">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Case</th>
+          <td mat-cell *matCellDef="let todo" class="case-cell">
+            <span class="case-id" *ngIf="todo.caseId">{{ todo.caseId }}</span>
+            <span *ngIf="!todo.caseId">-</span>
+          </td>
+        </ng-container>
+
+        <!-- Priority Column -->
+        <ng-container matColumnDef="priority">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Priority</th>
+          <td mat-cell *matCellDef="let todo">
+            <span class="priority-badge-small" 
+                  [style.background-color]="getPriorityColor(todo.priority)"
+                  [style.color]="todo.priority === 'Low' ? '#000' : '#fff'"
+                  [style.border]="todo.priority === 'Low' ? '1px solid #000' : 'none'">
+              {{ todo.priority }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Status Column -->
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Status</th>
+          <td mat-cell *matCellDef="let todo">
+            <span class="status-badge-small" [style.background-color]="getStatusColor(todo.status)">
+              {{ todo.status }}
+            </span>
+          </td>
+        </ng-container>
+
+        <!-- Due Date Column - NO WRAPPING -->
+        <ng-container matColumnDef="dueDate">
+          <th mat-header-cell *matHeaderCellDef mat-sort-header>Due Date</th>
+          <td mat-cell *matCellDef="let todo" class="date-cell">
+            <span *ngIf="todo.dueDate" [class.overdue-text]="isOverdue(todo)">
+              {{ todo.dueDate | date: 'MMM d, y' }}
+            </span>
+            <span *ngIf="!todo.dueDate">-</span>
+          </td>
+        </ng-container>
+
+        <!-- Actions Column -->
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let todo">
+            <div class="action-buttons">
+              <button class="action-btn" (click)="editTodo(todo)" matTooltip="Edit">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button class="action-btn" (click)="completeTodo(todo)" 
+                      *ngIf="todo.status !== 'Completed'"
+                      matTooltip="Complete">
+                <mat-icon>check_circle</mat-icon>
+              </button>
+              <button class="action-btn delete" (click)="deleteTodo(todo)" matTooltip="Delete">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- Kanban View - UPDATED WITH DRAG AND DROP -->
+  <div class="kanban-view" *ngIf="viewMode === 'kanban'">
+    <!-- Open Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <h3>Open</h3>
+        <span class="count">{{ getKanbanTodos('Open').length }}</span>
+      </div>
+      <div 
+        class="column-cards"
+        cdkDropList
+        id="kanban-open"
+        [cdkDropListData]="getKanbanTodos('Open')"
+        [cdkDropListConnectedTo]="getKanbanDropListIds()"
+        (cdkDropListDropped)="dropKanban($event, 'Open')">
+        <div *ngFor="let todo of getKanbanTodos('Open')" class="kanban-card" cdkDrag>
+          <div class="kanban-card-header">
+            <span class="priority-dot" [style.background-color]="getPriorityColor(todo.priority)"></span>
+            <h4>{{ todo.title }}</h4>
+            <button class="menu-btn-small" [matMenuTriggerFor]="kanbanMenu">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+            <mat-menu #kanbanMenu="matMenu">
+              <button mat-menu-item (click)="editTodo(todo)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button mat-menu-item (click)="deleteTodo(todo)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+          <p class="kanban-description">{{ todo.description }}</p>
+          <div class="kanban-footer">
+            <span class="case-tag" *ngIf="todo.caseId">{{ todo.caseId }}</span>
+            <span class="due-date-small" *ngIf="todo.dueDate" [class.overdue]="isOverdue(todo)">
+              <mat-icon>schedule</mat-icon>
+              {{ todo.dueDate | date: 'MMM d' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- In Progress Column -->
+    <div class="kanban-column">
+      <div class="column-header">
+        <h3>In Progress</h3>
+        <span class="count">{{ getKanbanTodos('In Progress').length }}</span>
+      </div>
+      <div 
+        class="column-cards"
+        cdkDropList
+        id="kanban-in-progress"
+        [cdkDropListData]="getKanbanTodos('In Progress')"
+        [cdkDropListConnectedTo]="getKanbanDropListIds()"
+        (cdkDropListDropped)="dropKanban($event, 'In Progress')">
+        <div *ngFor="let todo of getKanbanTodos('In Progress')" class="kanban-card" cdkDrag>
+          <div class="kanban-card-header">
+            <span class="priority-dot" [style.background-color]="getPriorityColor(todo.priority)"></span>
+            <h4>{{ todo.title }}</h4>
+            <button class="menu-btn-small" [matMenuTriggerFor]="kanbanMenu2">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+            <mat-menu #kanbanMenu2="matMenu">
+              <button mat-menu-item (click)="editTodo(todo)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button mat-menu-item (click)="deleteTodo(todo)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+          <p class="kanban-description">{{ todo.description }}</p>
+          <div class="kanban-footer">
+            <span class="case-tag" *ngIf="todo.caseId">{{ todo.caseId }}</span>
+            <span class="due-date-small" *ngIf="todo.dueDate" [class.overdue]="isOverdue(todo)">
+              <mat-icon>schedule</mat-icon>
+              {{ todo.dueDate | date: 'MMM d' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Completed Column -->
+    <div class="kanban-column completed">
+      <div class="column-header">
+        <h3>Completed</h3>
+        <span class="count">{{ getKanbanTodos('Completed').length }}</span>
+      </div>
+      <div 
+        class="column-cards"
+        cdkDropList
+        id="kanban-completed"
+        [cdkDropListData]="getKanbanTodos('Completed')"
+        [cdkDropListConnectedTo]="getKanbanDropListIds()"
+        (cdkDropListDropped)="dropKanban($event, 'Completed')">
+        <div *ngFor="let todo of getKanbanTodos('Completed')" class="kanban-card" cdkDrag>
+          <div class="kanban-card-header">
+            <span class="priority-dot" [style.background-color]="getPriorityColor(todo.priority)"></span>
+            <h4>{{ todo.title }}</h4>
+            <button class="menu-btn-small" [matMenuTriggerFor]="kanbanMenu3">
+              <mat-icon>more_horiz</mat-icon>
+            </button>
+            <mat-menu #kanbanMenu3="matMenu">
+              <button mat-menu-item (click)="editTodo(todo)">
+                <mat-icon>edit</mat-icon>
+                <span>Edit</span>
+              </button>
+              <button mat-menu-item (click)="deleteTodo(todo)">
+                <mat-icon>delete</mat-icon>
+                <span>Delete</span>
+              </button>
+            </mat-menu>
+          </div>
+          <p class="kanban-description">{{ todo.description }}</p>
+          <div class="kanban-footer">
+            <span class="case-tag" *ngIf="todo.caseId">{{ todo.caseId }}</span>
+            <span class="completed-date" *ngIf="todo.completedDate">
+              <mat-icon>check</mat-icon>
+              {{ todo.completedDate | date: 'MMM d' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pagination -->
+  <mat-paginator 
+    *ngIf="viewMode !== 'kanban'"
+    [length]="dataSource.filteredData.length"
+    [pageSize]="10"
+    [pageSizeOptions]="[5, 10, 25, 50]"
+    showFirstLastButtons>
+  </mat-paginator>
+</div>

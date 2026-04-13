@@ -1,0 +1,838 @@
+<div class="work-order-detail-dialog">
+    <!-- Dialog Header -->
+    <div class="dialog-header">
+      <div class="header-left">
+        <h1 class="wo-number">CASE # {{ data.wo }}</h1>
+      </div>
+      
+      <!-- Clipboard Indicator -->
+      <div class="clipboard-indicator" *ngIf="clipboardItems.length > 0">
+        <mat-icon>content_paste</mat-icon>
+        <span>{{ clipboardItems.length }} items</span>
+        <button mat-icon-button (click)="clearClipboard()" matTooltip="Clear clipboard">
+          <mat-icon>clear</mat-icon>
+        </button>
+      </div>
+
+      <!-- Action Buttons in Header -->
+      <div class="header-actions">
+        <!-- SEND EMAIL BUTTON - NEW -->
+        <button mat-raised-button 
+                class="send-email-btn"
+                (click)="openEmailComposer()">
+          <mat-icon>email</mat-icon>
+          Send Email
+        </button>
+
+        <!-- CREATE TODO BUTTON -->
+        <button mat-raised-button 
+                class="create-todo-btn"
+                (click)="openTodoForm()">
+          <mat-icon>add_task</mat-icon>
+          Create TODO
+        </button>
+        
+        <button mat-raised-button 
+                color="primary" 
+                (click)="assignToTeamMember()">
+          <mat-icon>person_add</mat-icon>
+          Assign
+        </button>
+        <button mat-raised-button 
+                color="accent" 
+                (click)="saveChanges()"
+                [disabled]="!hasUnsavedChanges">
+          <mat-icon>save</mat-icon>
+          Save Changes
+        </button>
+      </div>
+      
+      <button mat-icon-button class="close-btn" (click)="close()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <!-- EMAIL COMPOSER PANEL - NEW -->
+    <div class="email-composer-overlay" *ngIf="showEmailComposer" (click)="closeEmailComposer()"></div>
+    <div class="email-composer-panel" *ngIf="showEmailComposer">
+      <div class="email-composer-container">
+        <div class="email-composer-header">
+          <div class="header-icon">
+            <mat-icon>send</mat-icon>
+          </div>
+          <div class="header-text">
+            <h3>Send Email</h3>
+            <p>Case: {{ data.wo }} - {{ data.title }}</p>
+          </div>
+          <div class="header-templates">
+            <button mat-button [matMenuTriggerFor]="templateMenu" class="template-btn">
+              <mat-icon>insert_drive_file</mat-icon>
+              Use Template
+            </button>
+            <mat-menu #templateMenu="matMenu">
+              <button mat-menu-item (click)="useEmailTemplate('request_info')">
+                <mat-icon>info</mat-icon>
+                Request Information
+              </button>
+              <button mat-menu-item (click)="useEmailTemplate('update')">
+                <mat-icon>update</mat-icon>
+                Status Update
+              </button>
+              <button mat-menu-item (click)="useEmailTemplate('approval')">
+                <mat-icon>check_circle</mat-icon>
+                Request Approval
+              </button>
+              <button mat-menu-item (click)="useEmailTemplate('follow_up')">
+                <mat-icon>schedule</mat-icon>
+                Follow Up
+              </button>
+            </mat-menu>
+          </div>
+          <button mat-icon-button (click)="closeEmailComposer()" class="close-btn-email">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <form [formGroup]="emailForm" class="email-composer-content">
+          <!-- Recipient Type Toggle -->
+          <div class="recipient-type-toggle">
+            <mat-button-toggle-group formControlName="recipientType" class="toggle-group">
+              <mat-button-toggle value="team">
+                <mat-icon>people</mat-icon>
+                Team Member
+              </mat-button-toggle>
+              <mat-button-toggle value="customer">
+                <mat-icon>person</mat-icon>
+                Customer
+              </mat-button-toggle>
+              <mat-button-toggle value="custom">
+                <mat-icon>alternate_email</mat-icon>
+                Custom
+              </mat-button-toggle>
+            </mat-button-toggle-group>
+          </div>
+
+          <!-- To Field - Team Member -->
+          <mat-form-field appearance="outline" class="full-width" *ngIf="emailForm.get('recipientType')?.value === 'team'">
+            <mat-label>To (Team Member)</mat-label>
+            <mat-select formControlName="teamRecipient" multiple>
+              <mat-option *ngFor="let member of teamMembers" [value]="member">
+                <div class="team-member-option">
+                  <div class="member-avatar" [style.background-color]="member.color">
+                    {{ member.initials }}
+                  </div>
+                  <div class="member-info">
+                    <div class="member-name">{{ member.name }}</div>
+                    <div class="member-email">{{ member.email }}</div>
+                  </div>
+                </div>
+              </mat-option>
+            </mat-select>
+            <mat-icon matPrefix>people</mat-icon>
+          </mat-form-field>
+
+          <!-- To Field - Customer -->
+          <mat-form-field appearance="outline" class="full-width" *ngIf="emailForm.get('recipientType')?.value === 'customer'">
+            <mat-label>To (Customer)</mat-label>
+            <input matInput formControlName="customerEmail" placeholder="customer@email.com" readonly>
+            <mat-icon matPrefix>person</mat-icon>
+            <mat-hint>Customer email from case details</mat-hint>
+          </mat-form-field>
+
+          <!-- To Field - Custom -->
+          <mat-form-field appearance="outline" class="full-width" *ngIf="emailForm.get('recipientType')?.value === 'custom'">
+            <mat-label>To (Email Address)</mat-label>
+            <input matInput formControlName="customEmail" placeholder="email@example.com">
+            <mat-icon matPrefix>alternate_email</mat-icon>
+            <mat-error *ngIf="emailForm.get('customEmail')?.hasError('email')">
+              Please enter a valid email address
+            </mat-error>
+          </mat-form-field>
+
+          <!-- CC Field (Optional) -->
+          <mat-form-field appearance="outline" class="full-width" *ngIf="showCcBcc">
+            <mat-label>CC (Optional)</mat-label>
+            <input matInput formControlName="cc" placeholder="email@example.com">
+            <mat-icon matPrefix>carbon_copy</mat-icon>
+          </mat-form-field>
+
+          <!-- Subject Field -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Subject</mat-label>
+            <input matInput formControlName="subject" placeholder="Enter email subject">
+            <mat-icon matPrefix>subject</mat-icon>
+            <mat-error *ngIf="emailForm.get('subject')?.hasError('required')">
+              Subject is required
+            </mat-error>
+          </mat-form-field>
+
+          <!-- CC/BCC Toggle -->
+          <div class="email-options">
+            <button mat-button type="button" (click)="showCcBcc = !showCcBcc" class="option-btn">
+              <mat-icon>{{ showCcBcc ? 'visibility_off' : 'visibility' }}</mat-icon>
+              {{ showCcBcc ? 'Hide' : 'Show' }} CC
+            </button>
+            <mat-checkbox formControlName="urgent" class="urgent-checkbox">
+              <mat-icon class="urgent-icon">priority_high</mat-icon>
+              Mark as Urgent
+            </mat-checkbox>
+          </div>
+
+          <!-- Message Field -->
+          <mat-form-field appearance="outline" class="full-width email-message-field">
+            <mat-label>Message</mat-label>
+            <textarea 
+              matInput 
+              formControlName="message" 
+              rows="8" 
+              placeholder="Type your message here..."></textarea>
+            <mat-icon matPrefix>message</mat-icon>
+            <mat-error *ngIf="emailForm.get('message')?.hasError('required')">
+              Message is required
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Attachments -->
+          <div class="email-attachments" *ngIf="emailAttachments.length > 0">
+            <div class="attachment-label">
+              <mat-icon>attach_file</mat-icon>
+              <span>Attachments ({{ emailAttachments.length }})</span>
+            </div>
+            <div class="attachment-chips">
+              <mat-chip-set>
+                <mat-chip *ngFor="let attachment of emailAttachments" (removed)="removeEmailAttachment(attachment)">
+                  <mat-icon>description</mat-icon>
+                  {{ attachment.name }}
+                  <button matChipRemove>
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                </mat-chip>
+              </mat-chip-set>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <div class="left-actions">
+              <button mat-button type="button" class="attach-btn" (click)="attachCaseFiles()">
+                <mat-icon>attach_file</mat-icon>
+                Attach Files
+              </button>
+            </div>
+            <div class="right-actions">
+              <button 
+                mat-stroked-button 
+                type="button"
+                class="cancel-btn"
+                (click)="closeEmailComposer()">
+                <mat-icon>close</mat-icon>
+                Cancel
+              </button>
+              <button 
+                mat-raised-button 
+                type="button"
+                class="send-btn"
+                [disabled]="!emailForm.valid"
+                (click)="sendEmail()">
+                <mat-icon>send</mat-icon>
+                Send Email
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- TODO Creation Form Panel -->
+    <div class="todo-form-overlay" *ngIf="showTodoForm" (click)="closeTodoForm()"></div>
+    <div class="todo-form-panel" *ngIf="showTodoForm">
+      <div class="todo-form-container">
+        <div class="todo-form-header">
+          <div class="header-icon">
+            <mat-icon>task_alt</mat-icon>
+          </div>
+          <div class="header-text">
+            <h3>Create TODO from Case</h3>
+            <p>Case: {{ data.wo }} - {{ data.title }}</p>
+          </div>
+          <button mat-icon-button (click)="closeTodoForm()" class="close-btn-todo">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+
+        <form [formGroup]="todoForm" class="todo-form-content">
+          <!-- Title Field -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>TODO Title</mat-label>
+            <input matInput formControlName="title" placeholder="Enter task title">
+            <mat-icon matPrefix>title</mat-icon>
+            <mat-error *ngIf="todoForm.get('title')?.hasError('required')">
+              Title is required
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Description Field -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Description</mat-label>
+            <textarea 
+              matInput 
+              formControlName="description" 
+              rows="3" 
+              placeholder="Add details about this task"></textarea>
+            <mat-icon matPrefix>description</mat-icon>
+          </mat-form-field>
+
+          <!-- Priority and Status Row -->
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Priority</mat-label>
+              <mat-select formControlName="priority">
+                <mat-option value="Low">
+                  <span class="priority-option low">
+                    <mat-icon>flag</mat-icon>
+                    Low
+                  </span>
+                </mat-option>
+                <mat-option value="Medium">
+                  <span class="priority-option medium">
+                    <mat-icon>flag</mat-icon>
+                    Medium
+                  </span>
+                </mat-option>
+                <mat-option value="High">
+                  <span class="priority-option high">
+                    <mat-icon>flag</mat-icon>
+                    High
+                  </span>
+                </mat-option>
+                <mat-option value="Critical">
+                  <span class="priority-option critical">
+                    <mat-icon>flag</mat-icon>
+                    Critical
+                  </span>
+                </mat-option>
+              </mat-select>
+              <mat-icon matPrefix>flag</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="half-width">
+              <mat-label>Status</mat-label>
+              <mat-select formControlName="status">
+                <mat-option value="Open">Open</mat-option>
+                <mat-option value="In Progress">In Progress</mat-option>
+              </mat-select>
+              <mat-icon matPrefix>pending_actions</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <!-- Due Date -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Due Date</mat-label>
+            <input matInput [matDatepicker]="todoPicker" formControlName="dueDate">
+            <mat-icon matPrefix>event</mat-icon>
+            <mat-datepicker-toggle matSuffix [for]="todoPicker"></mat-datepicker-toggle>
+            <mat-datepicker #todoPicker></mat-datepicker>
+          </mat-form-field>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button 
+              mat-stroked-button 
+              type="button"
+              class="cancel-btn"
+              (click)="closeTodoForm()">
+              <mat-icon>close</mat-icon>
+              Cancel
+            </button>
+            <button 
+              mat-raised-button 
+              type="button"
+              class="submit-btn"
+              [disabled]="!todoForm.valid"
+              (click)="createTodo()">
+              <mat-icon>add_task</mat-icon>
+              Create TODO
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  
+    <!-- Dialog Content -->
+    <div class="dialog-content">
+      <!-- Left Panel - Work Order Info with Droppable Fields -->
+      <div class="left-panel">
+        <div class="wo-header">
+          <h2 class="wo-title">{{ data.title }}</h2>
+          <p class="wo-description">Monthly HVAC preventative maintenance, specifically for AC.</p>
+        </div>
+  
+        <div class="status-section">
+          <div class="status-badge">
+            <mat-icon>circle</mat-icon>
+            <span>Open</span>
+            <mat-icon class="dropdown-icon">arrow_drop_down</mat-icon>
+          </div>
+        </div>
+  
+        <!-- Editable/Droppable Fields Section -->
+        <div class="info-section">
+          <div class="info-row">
+            <span class="info-label">Category</span>
+            <div class="droppable-field"
+                 [class.drop-active]="editableFields[2].isEditing"
+                 [class.has-changes]="editableFields[2].hasChanges"
+                 (dragover)="onDragOver($event, editableFields[2])"
+                 (drop)="onDrop($event, editableFields[2])"
+                 (click)="onFieldClick(editableFields[2])">
+              <mat-icon class="field-icon">category</mat-icon>
+              <input 
+                *ngIf="editableFields[2].isEditing" 
+                type="text" 
+                [(ngModel)]="editableFields[2].value"
+                (blur)="onFieldBlur(editableFields[2])"
+                (change)="onFieldChange(editableFields[2])"
+                class="field-input">
+              <span *ngIf="!editableFields[2].isEditing" class="field-value">
+                {{ editableFields[2].value }}
+              </span>
+              <mat-icon *ngIf="editableFields[2].hasChanges" class="changed-indicator">edit</mat-icon>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label">Duration</span>
+            <div class="droppable-field"
+                 [class.drop-active]="editableFields[3].isEditing"
+                 [class.has-changes]="editableFields[3].hasChanges"
+                 (dragover)="onDragOver($event, editableFields[3])"
+                 (drop)="onDrop($event, editableFields[3])"
+                 (click)="onFieldClick(editableFields[3])">
+              <mat-icon class="field-icon">schedule</mat-icon>
+              <input 
+                *ngIf="editableFields[3].isEditing" 
+                type="text" 
+                [(ngModel)]="editableFields[3].value"
+                (blur)="onFieldBlur(editableFields[3])"
+                (change)="onFieldChange(editableFields[3])"
+                class="field-input">
+              <span *ngIf="!editableFields[3].isEditing" class="field-value">
+                {{ editableFields[3].value }}
+              </span>
+              <mat-icon *ngIf="editableFields[3].hasChanges" class="changed-indicator">edit</mat-icon>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label">Location</span>
+            <div class="droppable-field"
+                 [class.drop-active]="editableFields[0].isEditing"
+                 [class.has-changes]="editableFields[0].hasChanges"
+                 (dragover)="onDragOver($event, editableFields[0])"
+                 (drop)="onDrop($event, editableFields[0])"
+                 (click)="onFieldClick(editableFields[0])">
+              <mat-icon class="field-icon">location_on</mat-icon>
+              <input 
+                *ngIf="editableFields[0].isEditing" 
+                type="text" 
+                [(ngModel)]="editableFields[0].value"
+                (blur)="onFieldBlur(editableFields[0])"
+                (change)="onFieldChange(editableFields[0])"
+                class="field-input">
+              <span *ngIf="!editableFields[0].isEditing" class="field-value">
+                {{ editableFields[0].value }}
+              </span>
+              <mat-icon *ngIf="editableFields[0].hasChanges" class="changed-indicator">edit</mat-icon>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label">Asset</span>
+            <div class="droppable-field"
+                 [class.drop-active]="editableFields[1].isEditing"
+                 [class.has-changes]="editableFields[1].hasChanges"
+                 (dragover)="onDragOver($event, editableFields[1])"
+                 (drop)="onDrop($event, editableFields[1])"
+                 (click)="onFieldClick(editableFields[1])">
+              <mat-icon class="field-icon">build</mat-icon>
+              <input 
+                *ngIf="editableFields[1].isEditing" 
+                type="text" 
+                [(ngModel)]="editableFields[1].value"
+                (blur)="onFieldBlur(editableFields[1])"
+                (change)="onFieldChange(editableFields[1])"
+                class="field-input">
+              <span *ngIf="!editableFields[1].isEditing" class="field-value">
+                {{ editableFields[1].value }}
+              </span>
+              <mat-icon *ngIf="editableFields[1].hasChanges" class="changed-indicator">edit</mat-icon>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label">Contact</span>
+            <div class="droppable-field"
+                 [class.drop-active]="editableFields[4].isEditing"
+                 [class.has-changes]="editableFields[4].hasChanges"
+                 (dragover)="onDragOver($event, editableFields[4])"
+                 (drop)="onDrop($event, editableFields[4])"
+                 (click)="onFieldClick(editableFields[4])">
+              <mat-icon class="field-icon">person</mat-icon>
+              <input 
+                *ngIf="editableFields[4].isEditing" 
+                type="text" 
+                [(ngModel)]="editableFields[4].value"
+                (blur)="onFieldBlur(editableFields[4])"
+                (change)="onFieldChange(editableFields[4])"
+                class="field-input"
+                placeholder="Contact name">
+              <span *ngIf="!editableFields[4].isEditing" class="field-value field-empty">
+                {{ editableFields[4].value || 'Drop or click to add' }}
+              </span>
+              <mat-icon *ngIf="editableFields[4].hasChanges" class="changed-indicator">edit</mat-icon>
+            </div>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label">Phone</span>
+            <div class="droppable-field"
+                 [class.drop-active]="editableFields[5].isEditing"
+                 [class.has-changes]="editableFields[5].hasChanges"
+                 (dragover)="onDragOver($event, editableFields[5])"
+                 (drop)="onDrop($event, editableFields[5])"
+                 (click)="onFieldClick(editableFields[5])">
+              <mat-icon class="field-icon">phone</mat-icon>
+              <input 
+                *ngIf="editableFields[5].isEditing" 
+                type="text" 
+                [(ngModel)]="editableFields[5].value"
+                (blur)="onFieldBlur(editableFields[5])"
+                (change)="onFieldChange(editableFields[5])"
+                class="field-input"
+                placeholder="Phone number">
+              <span *ngIf="!editableFields[5].isEditing" class="field-value field-empty">
+                {{ editableFields[5].value || 'Drop or click to add' }}
+              </span>
+              <mat-icon *ngIf="editableFields[5].hasChanges" class="changed-indicator">edit</mat-icon>
+            </div>
+          </div>
+        </div>
+
+        <!-- Assigned Team Member Display -->
+        <div class="assigned-section" *ngIf="assignedMember">
+          <h3>Assigned To</h3>
+          <div class="assigned-member-card">
+            <div class="member-avatar" [style.background-color]="assignedMember.color">
+              {{ assignedMember.initials }}
+            </div>
+            <div class="member-details">
+              <div class="member-name">{{ assignedMember.name }}</div>
+              <div class="member-email">{{ assignedMember.email }}</div>
+            </div>
+            <button mat-icon-button (click)="assignedMember = null" matTooltip="Remove assignment">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel - Tabs -->
+      <div class="right-panel">
+        <mat-tab-group>
+          <!-- Activity Tab - UPDATED WITH EMAIL THREADS -->
+          <mat-tab label="Activity">
+            <div class="tab-content">
+              <div class="tab-header">
+                <h3>TIMELINE</h3>
+              </div>
+  
+              <div class="activity-list">
+                <div class="activity-item" 
+                     *ngFor="let activity of activities" 
+                     [class.email-activity]="activity.type === 'email'">
+                  <div class="activity-avatar" [style.background-color]="activity.color">
+                    <mat-icon *ngIf="activity.type === 'email'" class="activity-type-icon">email</mat-icon>
+                    <span *ngIf="activity.type !== 'email'">{{ activity.initials }}</span>
+                  </div>
+                  <div class="activity-details">
+                    <div class="activity-action">
+                      <strong>{{ activity.user }}</strong> {{ activity.action }}
+                    </div>
+                    <div class="activity-timestamp">{{ activity.timestamp }}</div>
+                    
+                    <!-- Email Thread Expansion -->
+                    <div class="email-thread" *ngIf="activity.type === 'email' && activity.emailData">
+                      <div class="email-preview" (click)="toggleEmailThread(activity)">
+                        <div class="email-header-row">
+                          <div class="email-recipients">
+                            <mat-icon>{{ activity.emailData.direction === 'sent' ? 'send' : 'inbox' }}</mat-icon>
+                            <span class="recipient-label">{{ activity.emailData.direction === 'sent' ? 'To:' : 'From:' }}</span>
+                            <span class="recipient-names">{{ activity.emailData.recipients }}</span>
+                          </div>
+                          <mat-icon class="expand-icon">
+                            {{ activity.expanded ? 'expand_less' : 'expand_more' }}
+                          </mat-icon>
+                        </div>
+                        <div class="email-subject">
+                          <mat-icon *ngIf="activity.emailData.urgent" class="urgent-badge">priority_high</mat-icon>
+                          {{ activity.emailData.subject }}
+                        </div>
+                      </div>
+                      
+                      <!-- Expanded Email Content -->
+                      <div class="email-content-expanded" *ngIf="activity.expanded">
+                        <div class="email-meta">
+                          <div class="meta-row">
+                            <span class="meta-label">From:</span>
+                            <span class="meta-value">{{ activity.emailData.from }}</span>
+                          </div>
+                          <div class="meta-row">
+                            <span class="meta-label">To:</span>
+                            <span class="meta-value">{{ activity.emailData.to }}</span>
+                          </div>
+                          <div class="meta-row" *ngIf="activity.emailData.cc">
+                            <span class="meta-label">CC:</span>
+                            <span class="meta-value">{{ activity.emailData.cc }}</span>
+                          </div>
+                          <div class="meta-row">
+                            <span class="meta-label">Date:</span>
+                            <span class="meta-value">{{ activity.timestamp }}</span>
+                          </div>
+                        </div>
+                        <div class="email-body">
+                          {{ activity.emailData.message }}
+                        </div>
+                        <div class="email-actions">
+                          <button mat-button (click)="replyToEmail(activity)" class="reply-btn">
+                            <mat-icon>reply</mat-icon>
+                            Reply
+                          </button>
+                          <button mat-button (click)="forwardEmail(activity)" class="forward-btn">
+                            <mat-icon>forward</mat-icon>
+                            Forward
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+  
+          <!-- Checklist Tab -->
+          <mat-tab label="Checklist">
+            <div class="tab-content">
+              <div class="tab-header">
+                <h3>TASKS</h3>
+                <div class="tab-actions">
+                  <button mat-raised-button color="primary" (click)="openNewChecklist()" *ngIf="!showChecklistPanel">
+                    <mat-icon>add_circle_outline</mat-icon>
+                    New Checklist
+                  </button>
+                </div>
+              </div>
+  
+              <div class="task-content-wrapper">
+                <!-- Checklist List -->
+                <div class="task-main-section" [class.with-panel]="showChecklistPanel">
+                  <div class="checklist-section" *ngIf="checklists.length > 0">
+                    <div class="checklist-item" *ngFor="let item of checklists">
+                      <mat-checkbox [(ngModel)]="item.completed" (change)="onChecklistChange()">
+                        {{ item.name }}
+                      </mat-checkbox>
+                    </div>
+                  </div>
+  
+                  <div class="empty-state" *ngIf="checklists.length === 0 && !showChecklistPanel">
+                    <mat-icon>checklist</mat-icon>
+                    <p>No checklist items yet</p>
+                  </div>
+                </div>
+  
+                <!-- Checklist Panel -->
+                <div class="checklist-side-panel" *ngIf="showChecklistPanel">
+                  <div class="panel-header">
+                    <h3>New Checklist</h3>
+                    <button mat-icon-button (click)="closeChecklistPanel()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <div class="panel-content">
+                    <p class="panel-description">Select a checklist template</p>
+                    <div class="template-options">
+                      <div class="template-card" [class.selected]="selectedChecklistTemplate === 'basic'" (click)="selectChecklistTemplate('basic')">
+                        <mat-icon>checklist</mat-icon>
+                        <h4>Basic Checklist</h4>
+                        <p>Simple task list</p>
+                      </div>
+                      <div class="template-card" [class.selected]="selectedChecklistTemplate === 'hvac'" (click)="selectChecklistTemplate('hvac')">
+                        <mat-icon>settings</mat-icon>
+                        <h4>HVAC Maintenance</h4>
+                        <p>HVAC specific tasks</p>
+                      </div>
+                      <div class="template-card" [class.selected]="selectedChecklistTemplate === 'safety'" (click)="selectChecklistTemplate('safety')">
+                        <mat-icon>shield</mat-icon>
+                        <h4>Safety Inspection</h4>
+                        <p>Safety checks</p>
+                      </div>
+                      <div class="template-card" [class.selected]="selectedChecklistTemplate === 'custom'" (click)="selectChecklistTemplate('custom')">
+                        <mat-icon>add_circle_outline</mat-icon>
+                        <h4>Custom</h4>
+                        <p>Create from scratch</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="panel-footer">
+                    <button mat-button (click)="closeChecklistPanel()">Cancel</button>
+                    <button mat-raised-button color="primary" (click)="createChecklist()" [disabled]="!selectedChecklistTemplate">Create</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+  
+          <!-- Files Tab with Attachment Viewer -->
+          <mat-tab label="Files">
+            <div class="tab-content">
+              <div class="tab-header">
+                <h3>ATTACHMENTS</h3>
+                <div class="tab-actions">
+                  <button mat-raised-button color="accent" (click)="uploadFile()">
+                    <mat-icon>upload</mat-icon>
+                    Upload
+                  </button>
+                  <button mat-raised-button color="primary" (click)="openNewChecklist()" *ngIf="!showChecklistPanel && !showAttachmentViewer">
+                    <mat-icon>add_circle_outline</mat-icon>
+                    New Checklist
+                  </button>
+                </div>
+              </div>
+  
+              <div class="task-content-wrapper">
+                <!-- File List or Attachment Viewer -->
+                <div class="task-main-section" [class.with-panel]="showChecklistPanel || showAttachmentViewer">
+                  
+                  <!-- File Grid -->
+                  <div class="file-list" *ngIf="!showAttachmentViewer && files.length > 0">
+                    <div class="file-item" *ngFor="let file of files" (click)="openAttachmentViewer(file)">
+                      <mat-icon class="file-icon" [ngClass]="'file-type-' + file.type">
+                        {{ file.type === 'email' ? 'email' : file.type === 'pdf' ? 'picture_as_pdf' : file.type === 'image' ? 'image' : 'description' }}
+                      </mat-icon>
+                      <div class="file-info">
+                        <div class="file-name">{{ file.name }}</div>
+                        <div class="file-meta">{{ file.size }} • {{ file.uploadedBy }} • {{ file.date }}</div>
+                      </div>
+                      <mat-icon class="view-icon">visibility</mat-icon>
+                    </div>
+                  </div>
+  
+                  <!-- Attachment Viewer -->
+                  <div class="attachment-viewer" *ngIf="showAttachmentViewer && selectedAttachment">
+                    <div class="viewer-header">
+                      <div class="viewer-title">
+                        <mat-icon>{{ selectedAttachment.type === 'email' ? 'email' : 'description' }}</mat-icon>
+                        <h4>{{ selectedAttachment.name }}</h4>
+                      </div>
+                      <button mat-icon-button (click)="closeAttachmentViewer()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                    </div>
+  
+                    <!-- Viewer Tabs -->
+                    <mat-tab-group [(selectedIndex)]="attachmentViewerTab" class="viewer-tabs">
+                      
+                      <!-- Preview Tab -->
+                      <mat-tab label="Preview">
+                        <div class="viewer-content" (mouseup)="onTextSelected()">
+                          <!-- Email Content -->
+                          <div *ngIf="selectedAttachment.type === 'email' && selectedAttachment.content" class="email-viewer">
+                            <pre class="email-content">{{ selectedAttachment.content }}</pre>
+                          </div>
+  
+                          <!-- PDF/Image Preview -->
+                          <div *ngIf="selectedAttachment.type === 'pdf' && selectedAttachment.url" class="pdf-viewer">
+                            <iframe [src]="getSafeUrl(selectedAttachment.url)" class="pdf-frame"></iframe>
+                          </div>
+  
+                          <!-- Image Preview -->
+                          <div *ngIf="selectedAttachment.type === 'image' && selectedAttachment.url" class="image-viewer">
+                            <img [src]="selectedAttachment.url" [alt]="selectedAttachment.name" class="preview-image">
+                          </div>
+                        </div>
+                      </mat-tab>
+  
+                      <!-- Extracted Text Tab (if available) -->
+                      <mat-tab label="Text" *ngIf="selectedAttachment.extractedText">
+                        <div class="viewer-content" (mouseup)="onTextSelected()">
+                          <pre class="extracted-text">{{ selectedAttachment.extractedText }}</pre>
+                        </div>
+                      </mat-tab>
+                    </mat-tab-group>
+                  </div>
+  
+                  <div class="empty-state" *ngIf="!showAttachmentViewer && files.length === 0">
+                    <mat-icon>folder_open</mat-icon>
+                    <p>No files attached yet</p>
+                  </div>
+                </div>
+  
+                <!-- Checklist Panel (reused from Checklist tab) -->
+                <div class="checklist-side-panel" *ngIf="showChecklistPanel">
+                  <div class="panel-header">
+                    <h3>New Checklist</h3>
+                    <button mat-icon-button (click)="closeChecklistPanel()">
+                      <mat-icon>close</mat-icon>
+                    </button>
+                  </div>
+                  <div class="panel-content">
+                    <p class="panel-description">Select a checklist template</p>
+                    <div class="template-options">
+                      <div class="template-card" [class.selected]="selectedChecklistTemplate === 'basic'" (click)="selectChecklistTemplate('basic')">
+                        <mat-icon>checklist</mat-icon>
+                        <h4>Basic Checklist</h4>
+                      </div>
+                      <div class="template-card" [class.selected]="selectedChecklistTemplate === 'hvac'" (click)="selectChecklistTemplate('hvac')">
+                        <mat-icon>settings</mat-icon>
+                        <h4>HVAC Maintenance</h4>
+                      </div>
+                      <div class="template-card" [class.selected]="selectedChecklistTemplate === 'safety'" (click)="selectChecklistTemplate('safety')">
+                        <mat-icon>shield</mat-icon>
+                        <h4>Safety Inspection</h4>
+                      </div>
+                      <div class="template-card" [class.selected]="selectedChecklistTemplate === 'custom'" (click)="selectChecklistTemplate('custom')">
+                        <mat-icon>add_circle_outline</mat-icon>
+                        <h4>Custom</h4>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="panel-footer">
+                    <button mat-button (click)="closeChecklistPanel()">Cancel</button>
+                    <button mat-raised-button color="primary" (click)="createChecklist()" [disabled]="!selectedChecklistTemplate">Create</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </mat-tab>
+  
+        </mat-tab-group>
+      </div>
+    </div>
+    
+    <!-- Selection Actions Toolbar (Global) -->
+    <div class="selection-actions" *ngIf="selectedText">
+      <button mat-mini-fab color="primary" 
+              (click)="copyToClipboard()"
+              matTooltip="Copy to clipboard"
+              draggable="true"
+              (dragstart)="onDragStart($event, selectedText)"
+              (dragend)="onDragEnd()">
+        <mat-icon>content_copy</mat-icon>
+      </button>
+      <button mat-mini-fab color="accent" 
+              (click)="addToChecklist()"
+              matTooltip="Add to checklist">
+        <mat-icon>playlist_add</mat-icon>
+      </button>
+    </div>
+  </div>

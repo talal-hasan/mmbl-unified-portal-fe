@@ -1,0 +1,45 @@
+# --------------------------
+# Create the organizational unit (OU) for users
+# --------------------------
+dn: ou=users,dc=mmbl,dc=local
+objectClass: organizationalUnit
+ou: users
+
+# --------------------------
+# Test User 1
+# --------------------------
+dn: cn=Ameer Khan,ou=users,dc=mmbl,dc=local
+objectClass: inetOrgPerson
+cn: Ameer Khan
+sn: Khan
+uid: ameer
+userPassword: Password123
+
+# --------------------------
+# Test User 2
+# --------------------------
+dn: cn=Ali Raza,ou=users,dc=mmbl,dc=local
+objectClass: inetOrgPerson
+cn: Ali Raza
+sn: Raza
+uid: ali
+userPassword: Password123
+
+# --------------------------
+# Test User 3
+# --------------------------
+dn: cn=Sara Ahmed,ou=users,dc=mmbl,dc=local
+objectClass: inetOrgPerson
+cn: Sara Ahmed
+sn: Ahmed
+uid: sara
+userPassword: Password123
+
+# --------------------------
+# Optional: Add an Admin Group
+# --------------------------
+dn: cn=Admins,ou=users,dc=mmbl,dc=local
+objectClass: groupOfNames
+cn: Admins
+member: cn=Ameer Khan,ou=users,dc=mmbl,dc=local
+member: cn=Ali Raza,ou=users,dc=mmbl,dc=local

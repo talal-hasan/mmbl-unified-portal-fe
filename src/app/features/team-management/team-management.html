@@ -1,0 +1,494 @@
+<div class="team-management-container">
+  <!-- Header Section -->
+  <div class="header-section">
+    <div class="header-content">
+      <div class="title-area">
+        <h1 class="main-title">Team Management</h1>
+        <p class="subtitle">Organize teams, assign members, and track performance</p>
+      </div>
+
+      <!-- Stats Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon teams">
+            <mat-icon>groups</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ teams.length }}</span>
+            <span class="stat-label">Active Teams</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon members">
+            <mat-icon>person</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ getTotalMembers() }}</span>
+            <span class="stat-label">Team Members</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon cases">
+            <mat-icon>assignment</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ getTotalActiveCases() }}</span>
+            <span class="stat-label">Active Cases</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon performance">
+            <mat-icon>trending_up</mat-icon>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ getAveragePerformance() }}%</span>
+            <span class="stat-label">Avg Performance</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <div class="search-section">
+      <mat-icon class="search-icon">search</mat-icon>
+      <input 
+        type="text" 
+        placeholder="Search teams or members..."
+        [(ngModel)]="searchQuery"
+        class="search-input">
+    </div>
+
+    <div class="toolbar-actions">
+      <!-- View Mode Toggle -->
+      <div class="view-toggle">
+        <button 
+          class="view-btn"
+          [class.active]="viewMode === 'grid'"
+          (click)="setViewMode('grid')"
+          matTooltip="Grid View">
+          <mat-icon>grid_view</mat-icon>
+        </button>
+        <button 
+          class="view-btn"
+          [class.active]="viewMode === 'compact'"
+          (click)="setViewMode('compact')"
+          matTooltip="Compact View">
+          <mat-icon>view_list</mat-icon>
+        </button>
+        <button 
+          class="view-btn"
+          [class.active]="viewMode === 'analytics'"
+          (click)="setViewMode('analytics')"
+          matTooltip="Analytics View">
+          <mat-icon>analytics</mat-icon>
+        </button>
+      </div>
+
+      <button class="action-btn primary" (click)="createNewTeam()">
+        <mat-icon>add</mat-icon>
+        <span>Create Team</span>
+      </button>
+
+      <button class="action-btn secondary" (click)="addNewMember()">
+        <mat-icon>person_add</mat-icon>
+        <span>Add Member</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="content-area">
+    <!-- Grid View -->
+    <div class="teams-grid" *ngIf="viewMode === 'grid'">
+      <!-- Team Cards -->
+      <div 
+        *ngFor="let team of getFilteredTeams()"
+        class="team-card"
+        [style.border-top-color]="team.color">
+        
+        <!-- Team Header -->
+        <div class="team-header">
+          <div class="team-info">
+            <div class="team-badge" [style.background-color]="team.color">
+              <mat-icon>groups</mat-icon>
+            </div>
+            <div class="team-details">
+              <h3 class="team-name">{{ team.name }}</h3>
+              <p class="team-description">{{ team.description }}</p>
+            </div>
+          </div>
+
+          <button class="menu-btn" [matMenuTriggerFor]="teamMenu">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #teamMenu="matMenu">
+            <button mat-menu-item (click)="editTeam(team)">
+              <mat-icon>edit</mat-icon>
+              <span>Edit Team</span>
+            </button>
+            <button mat-menu-item (click)="deleteTeam(team.id)">
+              <mat-icon>delete</mat-icon>
+              <span>Delete Team</span>
+            </button>
+          </mat-menu>
+        </div>
+
+        <!-- Team Stats -->
+        <div class="team-stats">
+          <div class="stat-item">
+            <mat-icon class="stat-icon-small">person</mat-icon>
+            <span>{{ team.members.length }} Members</span>
+          </div>
+          <div class="stat-item">
+            <mat-icon class="stat-icon-small">assignment</mat-icon>
+            <span>{{ team.totalCases }} Cases</span>
+          </div>
+          <div class="stat-item">
+            <mat-icon class="stat-icon-small">trending_up</mat-icon>
+            <span>{{ team.performance }}% Performance</span>
+          </div>
+        </div>
+
+        <!-- Team Lead -->
+        <div class="team-lead" *ngIf="team.lead">
+          <span class="lead-label">Team Lead:</span>
+          <span class="lead-name">{{ team.lead }}</span>
+        </div>
+
+        <!-- Members Drop Zone -->
+        <div 
+          class="members-zone"
+          cdkDropList
+          [cdkDropListData]="team.members"
+          [cdkDropListConnectedTo]="getConnectedDropLists()"
+          (cdkDropListDropped)="dropMember($event, team.id)"
+          [id]="team.id">
+          
+          <div class="members-header">
+            <span class="members-title">Team Members</span>
+            <span class="members-count">{{ team.members.length }}</span>
+          </div>
+
+          <div class="members-list">
+            <div 
+              *ngFor="let member of team.members"
+              class="member-card"
+              cdkDrag>
+              
+              <div class="member-main" (click)="viewMemberDetails(member)">
+                <img [src]="member.avatar" [alt]="member.name" class="member-avatar">
+                
+                <div class="member-info">
+                  <span class="member-name">{{ member.name }}</span>
+                  <span class="member-role">{{ member.role }}</span>
+                </div>
+
+                <div class="member-status">
+                  <div 
+                    class="status-indicator"
+                    [style.background-color]="getStatusColor(member.status)"
+                    [matTooltip]="member.status">
+                  </div>
+                </div>
+              </div>
+
+              <div class="member-stats">
+                <div class="member-stat">
+                  <mat-icon>assignment</mat-icon>
+                  <span>{{ member.assignedCases }}</span>
+                </div>
+                <div class="member-stat">
+                  <mat-icon>check_circle</mat-icon>
+                  <span>{{ member.completedCases }}</span>
+                </div>
+                <div class="member-stat efficiency">
+                  <mat-icon>speed</mat-icon>
+                  <span>{{ member.efficiency }}%</span>
+                </div>
+              </div>
+
+              <button 
+                class="remove-member-btn"
+                (click)="removeMemberFromTeam(member.id, team.id)"
+                matTooltip="Remove from team">
+                <mat-icon>close</mat-icon>
+              </button>
+
+              <div class="drag-handle" cdkDragHandle>
+                <mat-icon>drag_indicator</mat-icon>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="team.members.length === 0">
+              <mat-icon>person_add</mat-icon>
+              <p>Drag members here to add them to this team</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Bar -->
+        <div class="performance-bar">
+          <div class="performance-label">
+            <span>Team Performance</span>
+            <span class="performance-value">{{ team.performance }}%</span>
+          </div>
+          <div class="performance-track">
+            <div 
+              class="performance-fill"
+              [style.width.%]="team.performance"
+              [style.background-color]="team.color">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compact View -->
+    <div class="compact-view" *ngIf="viewMode === 'compact'">
+      <div class="compact-table">
+        <div class="compact-header">
+          <div class="col-team">Team</div>
+          <div class="col-members">Members</div>
+          <div class="col-cases">Cases</div>
+          <div class="col-performance">Performance</div>
+          <div class="col-actions">Actions</div>
+        </div>
+
+        <div *ngFor="let team of getFilteredTeams()" class="compact-row">
+          <div class="col-team">
+            <div class="team-badge-small" [style.background-color]="team.color"></div>
+            <div>
+              <div class="team-name-small">{{ team.name }}</div>
+              <div class="team-dept">{{ team.department }}</div>
+            </div>
+          </div>
+
+          <div class="col-members">
+            <div class="member-avatars">
+              <img 
+                *ngFor="let member of team.members.slice(0, 3)"
+                [src]="member.avatar"
+                [alt]="member.name"
+                [matTooltip]="member.name"
+                class="avatar-small">
+              <span *ngIf="team.members.length > 3" class="more-count">
+                +{{ team.members.length - 3 }}
+              </span>
+            </div>
+          </div>
+
+          <div class="col-cases">
+            <span class="cases-badge">{{ team.totalCases }} active</span>
+          </div>
+
+          <div class="col-performance">
+            <div class="performance-compact">
+              <div class="perf-bar-mini">
+                <div 
+                  class="perf-fill-mini"
+                  [style.width.%]="team.performance"
+                  [style.background-color]="team.color">
+                </div>
+              </div>
+              <span class="perf-text">{{ team.performance }}%</span>
+            </div>
+          </div>
+
+          <div class="col-actions">
+            <button class="icon-btn" matTooltip="View Details">
+              <mat-icon>visibility</mat-icon>
+            </button>
+            <button class="icon-btn" matTooltip="Edit">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button class="icon-btn" matTooltip="Delete" (click)="deleteTeam(team.id)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Analytics View -->
+    <div class="analytics-view" *ngIf="viewMode === 'analytics'">
+      <div class="analytics-grid">
+        <!-- Performance Chart -->
+        <div class="analytics-card large">
+          <h3 class="analytics-title">Team Performance Overview</h3>
+          <div class="chart-container">
+            <div class="performance-chart">
+              <div *ngFor="let team of teams" class="chart-bar-group">
+                <div class="chart-label">{{ team.name }}</div>
+                <div class="chart-bar-container">
+                  <div 
+                    class="chart-bar"
+                    [style.width.%]="team.performance"
+                    [style.background-color]="team.color">
+                    <span class="bar-value">{{ team.performance }}%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workload Distribution -->
+        <div class="analytics-card">
+          <h3 class="analytics-title">Workload Distribution</h3>
+          <div class="workload-chart">
+            <div *ngFor="let team of teams" class="workload-item">
+              <div class="workload-team">
+                <div class="team-dot" [style.background-color]="team.color"></div>
+                <span>{{ team.name }}</span>
+              </div>
+              <div class="workload-value">
+                <span class="cases-number">{{ team.totalCases }}</span>
+                <span class="cases-label">cases</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Performers -->
+        <div class="analytics-card">
+          <h3 class="analytics-title">Top Performers</h3>
+          <div class="top-performers">
+            <div class="performer-item" *ngFor="let member of getTopPerformers(); let i = index">
+              <div class="performer-rank">{{ i + 1 }}</div>
+              <img [src]="member.avatar" [alt]="member.name" class="performer-avatar">
+              <div class="performer-info">
+                <span class="performer-name">{{ member.name }}</span>
+                <span class="performer-stat">{{ member.completedCases }} cases completed</span>
+              </div>
+              <div class="performer-efficiency">{{ member.efficiency }}%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unassigned Members Panel -->
+  <div class="unassigned-panel">
+    <div class="panel-header">
+      <h3 class="panel-title">
+        <mat-icon>person_outline</mat-icon>
+        Unassigned Members
+      </h3>
+      <span class="panel-count">{{ unassignedMembers.length }}</span>
+    </div>
+
+    <div 
+      class="unassigned-list"
+      cdkDropList
+      [cdkDropListData]="unassignedMembers"
+      [cdkDropListConnectedTo]="getTeamDropListIds()"
+      (cdkDropListDropped)="dropMember($event)"
+      id="unassigned-list">
+      
+      <div 
+        *ngFor="let member of unassignedMembers"
+        class="unassigned-member"
+        cdkDrag>
+        
+        <div class="drag-handle" cdkDragHandle>
+          <mat-icon>drag_indicator</mat-icon>
+        </div>
+
+        <img [src]="member.avatar" [alt]="member.name" class="member-avatar-small">
+        
+        <div class="member-info-compact">
+          <span class="member-name-compact">{{ member.name }}</span>
+          <span class="member-role-compact">{{ member.role }}</span>
+        </div>
+
+        <div 
+          class="status-dot"
+          [style.background-color]="getStatusColor(member.status)">
+        </div>
+      </div>
+
+      <div class="empty-unassigned" *ngIf="unassignedMembers.length === 0">
+        <mat-icon>check_circle</mat-icon>
+        <p>All members assigned!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pending Cases Sidebar -->
+  <div class="pending-cases-sidebar" *ngIf="pendingCases.length > 0">
+    <div class="sidebar-header">
+      <h3 class="sidebar-title">
+        <mat-icon>assignment_late</mat-icon>
+        Pending Cases
+      </h3>
+      <span class="badge-critical">{{ pendingCases.length }}</span>
+    </div>
+
+    <div class="pending-list">
+      <div *ngFor="let case of pendingCases" class="pending-case">
+        <div class="case-priority" [style.background-color]="getPriorityColor(case.priority)">
+          {{ case.priority }}
+        </div>
+        <div class="case-info">
+          <span class="case-title">{{ case.title }}</span>
+        </div>
+        <button class="assign-btn" matTooltip="Assign case">
+          <mat-icon>person_add</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Member Details Modal (if needed) -->
+<div class="modal-overlay" *ngIf="showMemberDetails && selectedMember" (click)="showMemberDetails = false">
+  <div class="member-modal" (click)="$event.stopPropagation()">
+    <button class="modal-close" (click)="showMemberDetails = false">
+      <mat-icon>close</mat-icon>
+    </button>
+
+    <div class="modal-header">
+      <img [src]="selectedMember.avatar" [alt]="selectedMember.name" class="modal-avatar">
+      <div class="modal-info">
+        <h2>{{ selectedMember.name }}</h2>
+        <p>{{ selectedMember.role }}</p>
+      </div>
+    </div>
+
+    <div class="modal-content">
+      <div class="detail-row">
+        <span class="detail-label">Email:</span>
+        <span class="detail-value">{{ selectedMember.email }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Status:</span>
+        <span class="detail-value">{{ selectedMember.status }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Assigned Cases:</span>
+        <span class="detail-value">{{ selectedMember.assignedCases }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Completed Cases:</span>
+        <span class="detail-value">{{ selectedMember.completedCases }}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Efficiency:</span>
+        <span class="detail-value">{{ selectedMember.efficiency }}%</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Skills:</span>
+        <div class="skills-tags">
+          <span *ngFor="let skill of selectedMember.skills" class="skill-tag">{{ skill }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,371 @@
+/* You can add global styles to this file, and also import other style files */
+@use './styles/theme.scss';
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family:
+    'Inter',
+    'Roboto',
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// Component-specific styles
+.dashboard-content,
+.users-content,
+.analytics-content {
+  padding: 24px;
+  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  background: var(--mat-app-background);
+  // background: #fff;
+  max-width: 100%;
+  overflow-x: hidden;
+
+  // Mobile responsive padding
+  @media (max-width: 768px) {
+    padding: 16px 12px;
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    padding: 12px 8px;
+    gap: 12px;
+  }
+}
+
+.toolbar-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+.kpi-grid,
+.stats-grid,
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.kpi-card,
+.stat-card,
+.metric-card {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--mat-divider);
+}
+
+.kpi-card:hover,
+.stat-card:hover,
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.kpi-avatar,
+.stat-avatar,
+.metric-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.kpi-trend,
+.growth,
+.metric-change {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+}
+
+.positive {
+  color: var(--mat-success);
+}
+
+.negative {
+  color: var(--mat-warn);
+}
+
+.charts-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 12px;
+  }
+}
+
+.analytics-section {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    gap: 12px;
+  }
+}
+
+.analytics-grid,
+.bottom-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+.live-indicator {
+  width: 8px;
+  height: 8px;
+  background: var(--mat-success);
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.activity-meta,
+.source-metrics,
+.page-metrics,
+.funnel-metrics {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.country-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.header-actions {
+  margin-left: auto;
+}
+
+// Mobile responsive utilities
+.mobile-hidden {
+  @media (max-width: 768px) {
+    display: none !important;
+  }
+}
+
+.tablet-hidden {
+  @media (max-width: 1024px) {
+    display: none !important;
+  }
+}
+
+.desktop-hidden {
+  @media (min-width: 769px) {
+    display: none !important;
+  }
+}
+
+// Touch-friendly buttons on mobile
+@media (max-width: 768px) {
+  .mat-mdc-button,
+  .mat-mdc-raised-button,
+  .mat-mdc-outlined-button,
+  .mat-mdc-fab,
+  .mat-mdc-mini-fab {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .mat-mdc-icon-button {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+// Better form field spacing on mobile
+@media (max-width: 768px) {
+  .mat-mdc-form-field {
+    margin-bottom: 16px;
+  }
+
+  .mat-mdc-card {
+    margin: 8px 0;
+  }
+}
+
+// Responsive table improvements
+@media (max-width: 768px) {
+  .mat-mdc-table {
+    font-size: 14px;
+  }
+
+  .mat-mdc-header-cell,
+  .mat-mdc-cell {
+    padding: 8px 4px;
+  }
+}
+
+// Smooth transitions for theme changes
+* {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+// Prevent horizontal scroll on mobile
+html,
+body {
+  overflow-x: hidden;
+}
+
+// Better text readability on mobile
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+  h2 {
+    font-size: 1.5rem;
+  }
+  h3 {
+    font-size: 1.25rem;
+  }
+  h4 {
+    font-size: 1.125rem;
+  }
+  h5 {
+    font-size: 1rem;
+  }
+  h6 {
+    font-size: 0.875rem;
+  }
+}
+
+// Custom scrollbar for dark theme
+.dark {
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--mat-surface-variant);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+}
+
+// Light theme scrollbar
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--mat-surface-variant);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+
+
+/* Global styles for Work Order Detail Dialog - Fullscreen Mode */
+
+/* Add this to your global styles.scss file */
+
+.work-order-detail-dialog-container {
+  .mat-mdc-dialog-container {
+    padding: 0;
+    border-radius: 0;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+    
+    .mdc-dialog__surface {
+      border-radius: 0;
+      overflow: hidden;
+    }
+  }
+
+  /* Remove default Material Dialog backdrop blur for fullscreen */
+  &.cdk-overlay-pane {
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+  }
+}
+
+/* Ensure dialog takes full viewport */
+.cdk-overlay-pane.work-order-detail-dialog-container {
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+}

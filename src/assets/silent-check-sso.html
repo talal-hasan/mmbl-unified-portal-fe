@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <!--
+    This page is loaded in a hidden iframe by keycloak-js to silently
+    detect whether the user has an active Keycloak session.
+    It MUST be served as a static file at exactly this URL:
+      /assets/silent-check-sso.html
+    Do not add any scripts or meta tags — the postMessage below is the
+    only thing that needs to happen here.
+  -->
+  <body>
+    <script>
+      parent.postMessage(location.href, location.origin);
+    </script>
+  </body>
+</html>

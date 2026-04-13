@@ -1,0 +1,166 @@
+
+
+
+
+
+
+<div class="login-container">
+  <div class="login-wrapper">
+
+    <!-- Left Side - Branding (unchanged) -->
+    <div class="branding-section">
+      <div class="brand-content">
+        <div class="logo-section">
+          <mat-icon class="brand-logo">dashboard</mat-icon>
+          <h1>Octans Digital</h1>
+        </div>
+        <h2>MMBL Dashboard</h2>
+        <p>Powerful case management tool for modern businesses</p>
+      </div>
+    </div>
+
+    <!-- Right Side -->
+    <div class="form-section">
+      <mat-card class="login-card">
+        <div class="card-header">
+          <h2>Welcome Back</h2>
+          <p>
+            @if (isMockMode) {
+              Sign in to your account to continue
+            } @else {
+              Sign in with your organisation account
+            }
+          </p>
+        </div>
+
+        <mat-card-content>
+
+          <!-- ══════════════════════════════════════════════════════════════ -->
+          <!-- MOCK MODE — shown when MOCK_AUTH = 'true' in env.js           -->
+          <!-- ══════════════════════════════════════════════════════════════ -->
+          @if (isMockMode) {
+
+            <!-- Demo account quick-select buttons -->
+            <div class="demo-accounts">
+              <h3>Demo Accounts</h3>
+              <div class="demo-buttons">
+                @for (user of demoUsers; track user.email) {
+                  <button
+                    mat-stroked-button
+                    class="demo-btn"
+                    (click)="fillDemoCredentials(user.email)"
+                  >
+                    <div class="demo-info">
+                      <span class="demo-role">{{ user.role }}</span>
+                      <span class="demo-email">{{ user.email }}</span>
+                    </div>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <mat-divider class="divider"></mat-divider>
+
+            <!-- Standard email + password form -->
+            <form [formGroup]="loginForm" (ngSubmit)="login()">
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Email Address</mat-label>
+                <input matInput type="email" formControlName="email" required />
+                <mat-icon matSuffix>email</mat-icon>
+                @if (loginForm.get('email')?.hasError('required')) {
+                  <mat-error>Email is required</mat-error>
+                }
+                @if (loginForm.get('email')?.hasError('email')) {
+                  <mat-error>Please enter a valid email</mat-error>
+                }
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Password</mat-label>
+                <input
+                  matInput
+                  [type]="hidePassword() ? 'password' : 'text'"
+                  formControlName="password"
+                  required
+                />
+                <button
+                  mat-icon-button
+                  matSuffix
+                  type="button"
+                  (click)="togglePasswordVisibility()"
+                >
+                  <mat-icon>{{ hidePassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+                </button>
+                @if (loginForm.get('password')?.hasError('required')) {
+                  <mat-error>Password is required</mat-error>
+                }
+                @if (loginForm.get('password')?.hasError('minlength')) {
+                  <mat-error>Password must be at least 6 characters</mat-error>
+                }
+              </mat-form-field>
+
+              <div class="form-options">
+                <mat-checkbox formControlName="rememberMe">Remember me</mat-checkbox>
+                <button mat-button type="button" class="forgot-password">Forgot password?</button>
+              </div>
+
+              @if (isLoading()) {
+                <button mat-raised-button color="primary" class="full-width login-button" [disabled]="true">
+                  <mat-spinner diameter="20" class="spinner"></mat-spinner>
+                  <span>Signing in...</span>
+                </button>
+              } @else {
+                <button
+                  mat-raised-button
+                  color="primary"
+                  type="submit"
+                  class="full-width login-button"
+                  [disabled]="!loginForm.valid"
+                >
+                  <span>Sign In</span>
+                  <mat-icon>arrow_forward</mat-icon>
+                </button>
+              }
+
+            </form>
+
+          }
+
+          <!-- ══════════════════════════════════════════════════════════════ -->
+          <!-- LIVE MODE — shown when MOCK_AUTH = 'false' in env.js          -->
+          <!-- ══════════════════════════════════════════════════════════════ -->
+          @if (!isMockMode) {
+
+            @if (isLoading()) {
+              <button mat-raised-button color="primary" class="full-width login-button" [disabled]="true">
+                <mat-spinner diameter="20" class="spinner"></mat-spinner>
+                <span>Redirecting to login...</span>
+              </button>
+            } @else {
+              <button
+                mat-raised-button
+                color="primary"
+                class="full-width login-button"
+                (click)="login()"
+              >
+                <mat-icon>lock_open</mat-icon>
+                <span>Sign in with SSO</span>
+              </button>
+            }
+
+          }
+
+          <div class="login-footer" style="margin-top: 24px;">
+            <p>
+              Don't have an account?
+              <button mat-button color="primary">Contact Admin</button>
+            </p>
+          </div>
+
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+  </div>
+</div>
