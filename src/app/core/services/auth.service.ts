@@ -54,7 +54,7 @@ export type Permission =
   | 'drag-drop-access' | 'grids-access' | 'modal-popup-access'
   | 'headers-access' | 'footers-access' | 'sliders-access'
   | 'carousel-sliders-access' | 'gallery-access' | 'portfolio-access'
-  | 'editors-access';
+  | 'editors-access' | 'cases-view' | 'todo-access';
 
 export interface AuthUser {
   id:          string;
@@ -95,7 +95,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'drag-drop-access', 'grids-access', 'modal-popup-access',
     'headers-access', 'footers-access', 'sliders-access',
     'carousel-sliders-access', 'gallery-access', 'portfolio-access',
-    'editors-access',
+    'editors-access', 'cases-view', 'todo-access',
   ],
   editor: [
     'read', 'write', 'create',
@@ -120,7 +120,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'drag-drop-access', 'grids-access', 'modal-popup-access',
     'headers-access', 'footers-access', 'sliders-access',
     'carousel-sliders-access', 'gallery-access', 'portfolio-access',
-    'editors-access',
+    'editors-access', 'cases-view', 'todo-access',
   ],
   viewer: [
     'read',
@@ -137,6 +137,7 @@ const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
     'multiselect-tree-access', 'calendar-access', 'grids-access',
     'headers-access', 'footers-access', 'sliders-access',
     'carousel-sliders-access', 'gallery-access', 'portfolio-access',
+    'cases-view', 'todo-access',
   ],
 };
 

@@ -1,0 +1,322 @@
+<div class="draft-queue-container">
+
+  <!-- ── Page Header + KPI Cards ─────────────────────────────────────────── -->
+  <div class="page-header">
+    <div class="header-left">
+      <div class="breadcrumb">
+        <span class="bc-parent">OPERATIONS</span>
+        <mat-icon class="bc-sep">chevron_right</mat-icon>
+        <span class="bc-current">DRAFT CASES</span>
+      </div>
+      <h1 class="page-title">Draft Case Queue</h1>
+      <p class="page-subtitle">Review and merge automatically ingested cases from incoming email threads</p>
+    </div>
+
+    <div class="kpi-cards">
+      <div class="kpi-card awaiting">
+        <span class="kpi-value">{{ stats().awaitingDraft }}</span>
+        <span class="kpi-label">Awaiting Draft</span>
+      </div>
+      <div class="kpi-card ai">
+        <span class="kpi-value">{{ stats().aiSuggestions }}</span>
+        <span class="kpi-label">AI Suggestions</span>
+      </div>
+      <div class="kpi-card high">
+        <span class="kpi-value">{{ stats().highConfidence }}</span>
+        <span class="kpi-label">High Confidence</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Filter + Action Bar ──────────────────────────────────────────────── -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <!-- Search -->
+      <div class="search-box">
+        <mat-icon>search</mat-icon>
+        <input
+          type="text"
+          placeholder="Search drafts..."
+          [value]="searchValue"
+          (input)="applySearch($event)"
+          class="search-input"
+        />
+      </div>
+
+      <!-- Source filter -->
+      <div class="filter-chips">
+        <button
+          class="chip"
+          [class.active]="sourceFilter === 'all'"
+          (click)="sourceFilter = 'all'"
+        >
+          All Sources
+        </button>
+        <button
+          class="chip"
+          [class.active]="sourceFilter === 'Email'"
+          (click)="sourceFilter = 'Email'"
+        >
+          <mat-icon>email</mat-icon> Email
+        </button>
+        <button
+          class="chip"
+          [class.active]="sourceFilter === 'Manual'"
+          (click)="sourceFilter = 'Manual'"
+        >
+          <mat-icon>edit</mat-icon> Manual
+        </button>
+      </div>
+
+      <!-- Similarity sort -->
+      <div class="sort-control">
+        <mat-icon class="sort-icon">sort</mat-icon>
+        <select [(ngModel)]="similaritySort" class="sort-select">
+          <option value="high-low">Similarity: High to Low</option>
+          <option value="low-high">Similarity: Low to High</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="toolbar-right">
+      <button class="btn-outline" (click)="exportReport()">
+        <mat-icon>download</mat-icon>
+        Export Report
+      </button>
+      <button
+        class="btn-primary"
+        [disabled]="selection.selected.length === 0"
+        (click)="bulkConfirm()"
+      >
+        <mat-icon>check_circle</mat-icon>
+        Bulk Confirm
+        @if (selection.selected.length > 0) {
+          <span class="count-badge">{{ selection.selected.length }}</span>
+        }
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Draft Cases Table ─────────────────────────────────────────────────── -->
+  <div class="table-wrapper">
+    @if (filteredDrafts().length === 0) {
+      <div class="empty-state">
+        <mat-icon>inbox</mat-icon>
+        <h3>No draft cases</h3>
+        <p>All caught up — no pending email drafts to review.</p>
+      </div>
+    } @else {
+      <table class="draft-table">
+        <thead>
+          <tr>
+            <th class="col-check">
+              <mat-checkbox
+                [checked]="isAllSelected()"
+                [indeterminate]="selection.hasValue() && !isAllSelected()"
+                (change)="masterToggle()"
+              ></mat-checkbox>
+            </th>
+            <th class="col-id">CASE ID</th>
+            <th class="col-subject">SUBJECT (EMAIL INGEST)</th>
+            <th class="col-source">SOURCE</th>
+            <th class="col-similarity">SIMILARITY</th>
+            <th class="col-refs">SIMILAR REFS</th>
+            <th class="col-actions">ACTIONS</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (draft of visibleDrafts(); track draft.id) {
+            <tr class="draft-row" [class.selected]="selection.isSelected(draft)">
+
+              <!-- Checkbox -->
+              <td class="col-check">
+                <mat-checkbox
+                  [checked]="selection.isSelected(draft)"
+                  (click)="$event.stopPropagation()"
+                  (change)="selection.toggle(draft)"
+                ></mat-checkbox>
+              </td>
+
+              <!-- Case ID -->
+              <td class="col-id">
+                <span class="draft-id">{{ draft.id }}</span>
+              </td>
+
+              <!-- Subject + sender + time -->
+              <td class="col-subject">
+                <div class="subject-cell">
+                  <div class="subject-source-icon">
+                    <mat-icon class="source-icon {{ draft.source.toLowerCase() }}">
+                      {{ getSourceIcon(draft.source) }}
+                    </mat-icon>
+                    <span class="source-label-small">{{ draft.source }}</span>
+                  </div>
+                  <div class="subject-main">
+                    <span class="subject-text">{{ draft.subject }}</span>
+                    <span class="sender-meta">
+                      From: {{ draft.senderName }} &bull; {{ relativeTime(draft.receivedAt) }}
+                    </span>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Source badge -->
+              <td class="col-source">
+                <span class="source-badge {{ draft.source.toLowerCase() }}">
+                  <mat-icon>{{ getSourceIcon(draft.source) }}</mat-icon>
+                  {{ draft.source }}
+                </span>
+              </td>
+
+              <!-- Similarity score + tier badge -->
+              <td class="col-similarity">
+                <div class="similarity-cell">
+                  <div class="score-bar-wrap">
+                    <div
+                      class="score-bar {{ getTierClass(draft.similarityTier) }}"
+                      [style.width.%]="draft.similarityScore"
+                    ></div>
+                  </div>
+                  <span class="score-badge {{ getTierClass(draft.similarityTier) }}">
+                    {{ draft.similarityScore }}% {{ draft.similarityTier }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- Similar refs -->
+              <td class="col-refs">
+                @if (draft.similarRefs.length > 0) {
+                  <div class="refs-list">
+                    @for (ref of draft.similarRefs.slice(0, 2); track ref.caseId) {
+                      <span class="ref-chip" [matTooltip]="ref.title">{{ ref.caseId }}</span>
+                    }
+                    @if (draft.similarRefs.length > 2) {
+                      <span class="ref-more">+{{ draft.similarRefs.length - 2 }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span class="no-refs">No matches</span>
+                }
+              </td>
+
+              <!-- Actions -->
+              <td class="col-actions">
+                <div class="actions-cell">
+                  <!-- View (always available) -->
+                  <button
+                    class="action-btn view-btn"
+                    mat-stroked-button
+                    matTooltip="Preview draft"
+                    (click)="$event.stopPropagation()"
+                  >
+                    View
+                  </button>
+
+                  <!-- Merge (only when similar refs exist) -->
+                  @if (draft.similarRefs.length > 0) {
+                    <button
+                      class="action-btn merge-btn"
+                      mat-raised-button
+                      matTooltip="Merge into existing case"
+                      (click)="openMergeDialog(draft, $event)"
+                    >
+                      <mat-icon>merge_type</mat-icon>
+                      Merge
+                    </button>
+                  } @else {
+                    <!-- No refs: show Confirm New -->
+                    <button
+                      class="action-btn confirm-btn"
+                      mat-raised-button
+                      matTooltip="Create as new confirmed case"
+                      (click)="confirmNew(draft, $event)"
+                    >
+                      <mat-icon>add_circle</mat-icon>
+                      Confirm New
+                    </button>
+                  }
+
+                  <!-- Reject -->
+                  <button
+                    class="action-btn reject-btn"
+                    mat-icon-button
+                    matTooltip="Reject draft"
+                    (click)="rejectDraft(draft, $event)"
+                  >
+                    <mat-icon>close</mat-icon>
+                  </button>
+
+                  <!-- More actions -->
+                  <button
+                    class="action-btn more-btn"
+                    mat-icon-button
+                    [matMenuTriggerFor]="moreMenu"
+                    (click)="$event.stopPropagation()"
+                  >
+                    <mat-icon>more_vert</mat-icon>
+                  </button>
+                  <mat-menu #moreMenu="matMenu">
+                    @if (draft.similarRefs.length > 0) {
+                      <button mat-menu-item (click)="confirmNew(draft, $event)">
+                        <mat-icon>add_circle</mat-icon> Confirm as New Case
+                      </button>
+                    }
+                    <button mat-menu-item (click)="rejectDraft(draft, $event)">
+                      <mat-icon>delete_outline</mat-icon> Reject Draft
+                    </button>
+                  </mat-menu>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+
+  <!-- ── ERPNext-style Load More Bar ───────────────────────────────────────── -->
+  @if (filteredDrafts().length > 0) {
+    <div class="load-more-bar">
+      <span class="results-count">{{ getDisplayedResults() }}</span>
+
+      @if (hasMore()) {
+        <button class="load-more-btn" (click)="loadMore()">
+          Load More
+          <span class="remaining-badge">{{ remainingCount() }} remaining</span>
+        </button>
+      } @else if (filteredDrafts().length > 0) {
+        <div class="all-loaded">
+          <mat-icon>check_circle</mat-icon>
+          All {{ filteredDrafts().length }} drafts loaded
+        </div>
+      }
+
+      <div class="page-size-options">
+        <span class="size-label">Show</span>
+        @for (size of [10, 25, 50, 100]; track size) {
+          <button
+            class="size-btn"
+            [class.active]="pageSize === size"
+            (click)="pageSize = size; visibleCount.set(size)"
+          >
+            {{ size }}
+          </button>
+        }
+      </div>
+    </div>
+  }
+
+  <!-- ── System Status Bar ─────────────────────────────────────────────────── -->
+  <div class="status-bar">
+    <div class="status-left">
+      <span class="status-dot online"></span>
+      <span>SYSTEM ONLINE</span>
+      <span class="sep">|</span>
+      <span>QUEUE LATENCY: 12MS</span>
+      <span class="sep">|</span>
+      <span>LAST SYNC: {{ 'now' | uppercase }}</span>
+    </div>
+    <div class="status-right">V4.2.1-STABLE</div>
+  </div>
+
+</div>
