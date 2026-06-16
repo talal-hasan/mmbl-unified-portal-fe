@@ -1,6 +1,15 @@
 <div class="layout-container">
-  <app-header (toggleSidebar)="toggleSidebar()" />
 
+  <!-- Unified header — logo + horizontal nav + actions, no separate section feel -->
+  <app-header />
+
+  <!-- Main content — full width, no sidebar -->
+  <main class="main-content">
+    <router-outlet />
+  </main>
+
+  <!-- Sidebar commented out per design decision — keeping code intact -->
+  <!--
   <mat-sidenav-container class="sidenav-container">
     <mat-sidenav
       #sidenav
@@ -14,12 +23,12 @@
         (sidebarToggle)="toggleSidebar()"
       />
     </mat-sidenav>
-
     <mat-sidenav-content>
       <main class="main-content">
         <router-outlet />
       </main>
-      <app-footer />
     </mat-sidenav-content>
   </mat-sidenav-container>
+  -->
+
 </div>

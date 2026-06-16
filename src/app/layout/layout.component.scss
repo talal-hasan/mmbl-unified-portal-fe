@@ -1,34 +1,46 @@
 .layout-container {
-  height: 100vh;
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-}
-
-.sidenav-container {
-  flex: 1;
+  background: #F5F5F5;
 }
 
 .main-content {
-  padding: 24px;
-
-  // Mobile responsive padding
-  @media (max-width: 768px) {
-    padding: 16px 12px;
-  }
-
-  @media (max-width: 480px) {
-    padding: 12px 8px;
-  }
+  flex: 1;
+  padding: 0; // Each page owns its own padding for full bleed control
 }
 
-// Mobile sidebar overlay
-@media (max-width: 768px) {
-  .mat-drawer-backdrop {
-    background-color: rgba(0, 0, 0, 0.6);
-  }
+// .layout-container {
+//   height: 100vh;
+//   display: flex;
+//   flex-direction: column;
+// }
 
-  .mat-drawer {
-    width: 280px !important;
-    max-width: 85vw;
-  }
-}
+// .sidenav-container {
+//   flex: 1;
+// }
+
+// .main-content {
+//   padding: 24px;
+
+//   // Mobile responsive padding
+//   @media (max-width: 768px) {
+//     padding: 16px 12px;
+//   }
+
+//   @media (max-width: 480px) {
+//     padding: 12px 8px;
+//   }
+// }
+
+// // Mobile sidebar overlay
+// @media (max-width: 768px) {
+//   .mat-drawer-backdrop {
+//     background-color: rgba(0, 0, 0, 0.6);
+//   }
+
+//   .mat-drawer {
+//     width: 280px !important;
+//     max-width: 85vw;
+//   }
+// }

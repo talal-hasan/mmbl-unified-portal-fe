@@ -1,88 +1,78 @@
-<mat-toolbar class="header-toolbar">
-  <div class="header-left">
-    <button
-      mat-icon-button
-      (click)="toggleSidebar.emit()"
-      aria-label="Toggle sidebar"
-      class="menu-button"
-    >
-      <mat-icon>menu</mat-icon>
-    </button>
+<!-- ═══════════════════════════════════════════════════════════════════════════
+  MMBL Unified Header — Logo + Horizontal Nav + Right Icons, all in one bar
+  Sidebar is commented out below; layout.component handles the shell.
+  ═══════════════════════════════════════════════════════════════════════════ -->
+<header class="mmbl-header">
 
-    <div class="header-title">
-      <h1>MMBL</h1>
-      <span class="subtitle">Powered by Octans Digital</span>
+  <!-- LEFT: Logo -->
+  <div class="header-logo">
+    <div class="logo-icon">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+        <rect width="22" height="22" rx="6" fill="#DC2626"/>
+        <path d="M4 16V8l4 5 3-4 3 4 4-5v8" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <span class="logo-mmbl">MMBL</span>
+      <span class="logo-sub">Portal</span>
     </div>
   </div>
 
-  <div class="header-right">
-    <!-- <mat-form-field appearance="outline" class="search-field">
-      <mat-label>Search...</mat-label>
-      <input matInput />
-      <mat-icon matSuffix>search</mat-icon>
-    </mat-form-field> -->
-
+  <!-- CENTER: Horizontal scrollable nav with 5 visible items -->
+  <div class="header-nav-wrapper">
     <button
-      mat-icon-button
-      [matBadge]="unreadCount() > 0 ? unreadCount() : null"
-      matBadgeColor="warn"
-      matBadgeSize="small"
-      class="notification-button"
-      [matMenuTriggerFor]="notificationMenu"
+      class="nav-scroll-btn left"
+      [class.visible]="canScrollLeft"
+      (click)="scrollNav(-1)"
+      aria-label="Scroll nav left"
     >
-      <mat-icon>notifications</mat-icon>
+      <mat-icon>chevron_left</mat-icon>
     </button>
 
-    <mat-menu #notificationMenu="matMenu" class="notification-menu">
-      <div class="notification-header">
-        <h3>Notifications</h3>
-        <button mat-button (click)="navigateToNotifications()" class="view-all-btn">
-          View All
-        </button>
-      </div>
-      <mat-divider></mat-divider>
-
-      @for (notification of notifications().slice(0, 5); track notification.id) {
-        <div
-          class="notification-item"
-          [class.unread]="!notification.read"
-          (click)="markAsRead(notification.id)"
+    <nav class="header-nav" #navScroll>
+      @for (item of navItems(); track item.path) {
+        <a
+          class="nav-item"
+          [class.active]="isActive(item.path)"
+          [routerLink]="item.path"
+          (click)="onNavClick(item)"
         >
-          <div class="notification-icon" [class]="'type-' + notification.type">
-            @switch (notification.type) {
-              @case ('info') {
-                <mat-icon>info</mat-icon>
-              }
-              @case ('success') {
-                <mat-icon>check_circle</mat-icon>
-              }
-              @case ('warning') {
-                <mat-icon>warning</mat-icon>
-              }
-              @case ('error') {
-                <mat-icon>error</mat-icon>
-              }
-            }
-          </div>
-          <div class="notification-content">
-            <div class="notification-title">{{ notification.title }}</div>
-            <div class="notification-message">{{ notification.message }}</div>
-            <div class="notification-time">{{ notification.time }}</div>
-          </div>
-        </div>
-      } @empty {
-        <div class="no-notifications">
-          <mat-icon>notifications_none</mat-icon>
-          <p>No notifications</p>
-        </div>
+          @if (item.badge && item.badge > 0) {
+            <span class="nav-badge">{{ item.badge }}</span>
+          }
+          {{ item.label }}
+        </a>
       }
-    </mat-menu>
+    </nav>
 
     <button
-      mat-icon-button
-      (click)="themeService.toggleTheme()"
-      [attr.aria-label]="themeService.isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+      class="nav-scroll-btn right"
+      [class.visible]="canScrollRight"
+      (click)="scrollNav(1)"
+      aria-label="Scroll nav right"
     >
+      <mat-icon>chevron_right</mat-icon>
+    </button>
+  </div>
+
+  <!-- RIGHT: Icons -->
+  <div class="header-actions">
+
+    <!-- Notifications -->
+    <button
+      class="action-btn"
+      [class.has-badge]="unreadCount() > 0"
+      [matMenuTriggerFor]="notificationMenu"
+      [attr.aria-label]="'Notifications: ' + unreadCount() + ' unread'"
+    >
+      <mat-icon>notifications_outlined</mat-icon>
+      @if (unreadCount() > 0) {
+        <span class="badge">{{ unreadCount() }}</span>
+      }
+    </button>
+
+    <!-- Theme toggle -->
+    <button class="action-btn" (click)="themeService.toggleTheme()" aria-label="Toggle theme">
       @if (!themeService.isDarkMode()) {
         <mat-icon>dark_mode</mat-icon>
       } @else {
@@ -90,26 +80,54 @@
       }
     </button>
 
-    <button mat-button [matMenuTriggerFor]="userMenu" class="user-button">
-      <mat-icon class="user-avatar">account_circle</mat-icon>
-      <span class="user-name">Admin User</span>
-      <mat-icon class="dropdown-icon">keyboard_arrow_down</mat-icon>
+    <!-- Export / Calendar / Fullscreen (matching screenshot) -->
+    <button class="action-btn" aria-label="Export">
+      <mat-icon>ios_share</mat-icon>
     </button>
+    <button class="action-btn" aria-label="Calendar">
+      <mat-icon>calendar_today</mat-icon>
+    </button>
+    <button class="action-btn" aria-label="Expand">
+      <mat-icon>open_in_full</mat-icon>
+    </button>
+
+    <!-- User avatar -->
+    <button class="user-btn" [matMenuTriggerFor]="userMenu">
+      <div class="user-avatar">{{ userInitials() }}</div>
+    </button>
+
+    <mat-menu #notificationMenu="matMenu" class="notification-menu">
+      <div class="notif-header">
+        <h3>Notifications</h3>
+        <button mat-button class="view-all-btn" (click)="navigateToNotifications()">View All</button>
+      </div>
+      <mat-divider></mat-divider>
+      @for (n of notifications().slice(0, 5); track n.id) {
+        <div class="notif-item" [class.unread]="!n.read" (click)="markAsRead(n.id)">
+          <div class="notif-icon type-{{ n.type }}">
+            <mat-icon>{{ n.type === 'info' ? 'info' : n.type === 'success' ? 'check_circle' : n.type === 'warning' ? 'warning' : 'error' }}</mat-icon>
+          </div>
+          <div class="notif-body">
+            <div class="notif-title">{{ n.title }}</div>
+            <div class="notif-msg">{{ n.message }}</div>
+            <div class="notif-time">{{ n.time }}</div>
+          </div>
+        </div>
+      }
+    </mat-menu>
 
     <mat-menu #userMenu="matMenu">
       <button mat-menu-item (click)="navigateToProfile()">
-        <mat-icon>person</mat-icon>
-        Profile
+        <mat-icon>person</mat-icon> Profile
       </button>
       <button mat-menu-item (click)="navigateToSettings()">
-        <mat-icon>settings</mat-icon>
-        Settings
+        <mat-icon>settings</mat-icon> Settings
       </button>
       <mat-divider></mat-divider>
       <button mat-menu-item (click)="logout()">
-        <mat-icon>logout</mat-icon>
-        Logout
+        <mat-icon>logout</mat-icon> Sign out
       </button>
     </mat-menu>
+
   </div>
-</mat-toolbar>
+</header>

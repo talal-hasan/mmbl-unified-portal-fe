@@ -26,8 +26,8 @@ import { MergeDialogComponent, MergeDialogResult } from './merge-dialog/merge-di
     MatTooltipModule, MatMenuModule, MatSelectModule,
     MatSnackBarModule, MatDialogModule,
   ],
-  templateUrl: './draft-queue.component.html',
-  styleUrl: './draft-queue.component.scss',
+  templateUrl: './draft-queue.html',
+  styleUrl: './draft-queue.scss',
 })
 export class DraftQueueComponent {
   private casesService = inject(CasesService);

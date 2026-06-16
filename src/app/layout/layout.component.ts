@@ -14,26 +14,26 @@ import { MatIcon } from '@angular/material/icon';
   templateUrl: './layout.component.html',
   styleUrl: './layout.component.scss',
 })
-export class LayoutComponent implements OnInit {
-  private breakpointObserver = inject(BreakpointObserver);
+export class LayoutComponent {
+  // private breakpointObserver = inject(BreakpointObserver);
 
-  sidebarOpen = signal(false);
-  isMobile = signal(false);
+  // sidebarOpen = signal(false);
+  // isMobile = signal(false);
 
-  ngOnInit() {
-    this.breakpointObserver.observe([Breakpoints.Handset]).subscribe((result) => {
-      this.isMobile.set(result.matches);
-      this.sidebarOpen.set(!result.matches);
-    });
-  }
+  // ngOnInit() {
+  //   this.breakpointObserver.observe([Breakpoints.Handset]).subscribe((result) => {
+  //     this.isMobile.set(result.matches);
+  //     this.sidebarOpen.set(!result.matches);
+  //   });
+  // }
 
-  toggleSidebar() {
-    this.sidebarOpen.update((value) => !value);
-  }
+  // toggleSidebar() {
+  //   this.sidebarOpen.update((value) => !value);
+  // }
 
-  closeSidebar() {
-    if (this.isMobile()) {
-      this.sidebarOpen.set(false);
-    }
-  }
+  // closeSidebar() {
+  //   if (this.isMobile()) {
+  //     this.sidebarOpen.set(false);
+  //   }
+  // }
 }
